@@ -22,12 +22,24 @@ def merge_two_dict(d1, d2):
     return dd
 
 def write_json(filename, my_dict):
+    '''
+
+    :param filename: json filename
+    :param my_dict: dictionary to convert
+    :return: json file
+    '''
     with open(filename, 'w') as f:
         json.dump(my_dict, f)
     return filename
 
 
 def write_csv(my_dict, filename):
+    '''
+
+    :param my_dict: dictionary to write
+    :param filename:
+    :return: csv file
+    '''
     with open (filename, 'w', newline='') as f:
         writer = csv.writer(f)
         for row in my_dict.items():
@@ -39,7 +51,7 @@ def query_database(sql):
     '''
 
     :param sql:
-    :return:
+    :return: rows
     '''
     try:
         connection = psycopg2.connect(database="chembl_25"
@@ -110,9 +122,7 @@ with open(sys.argv[1]) as csv_file:
             for k,v in activity_inner_dict.items():
                 d[k] = max(v)
 
-        #print(d)
-        #write_csv(d, '{}_activity.csv'.format(unp_id))
-        #write_csv(smiles_inner_dict, '{}_smiles.csv'.format(unp_id))
+
 
 
         new_dict = merge_two_dict(smiles_inner_dict, d)
