@@ -1,6 +1,11 @@
 from rdkit import Chem
 from rdkit.Chem.Scaffolds import MurckoScaffold
 import json
+import os
+import argparse
+import logging
+logging.basicConfig(level=logging.INFO)
+import csv
 
 
 def read_json_file(filename, choice):
@@ -107,14 +112,37 @@ def lt100scaffolds(scaffolds, activities, smiles):
 
     return actives
 
-activity_dict = read_json_file('P24941.json', choice='activity_dict')
-smiles_dict = read_json_file('P24941.json', choice='smiles_dict')
+def write_csv(my_dict, filename):
+    with open (filename, 'w', newline='') as f:
+        writer = csv.writer(f)
+        for row in my_dict.items():
+            writer.writerow(row)
 
-dbofscaffolds = getMurckoScaffold(smiles_dict)
-print(len(dbofscaffolds))
-if len(dbofscaffolds) >= 100:
-    actives = mt100scaffolds(dbofscaffolds, activity_dict, smiles_dict)
-    #print(actives)
-elif len(dbofscaffolds) < 100:
-    actives = lt100scaffolds(dbofscaffolds, activity_dict, smiles_dict)
-    print(actives)
+    return filename
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--working_dir', '-dir', help='directory where the json files are')
+    args = parser.parse_args()
+
+    json_files = os.listdir(args.working_dir)
+
+    for file in json_files:
+        print(file)
+        json_file_name = file.split('.')
+        json_file = os.path.join(args.working_dir, file)
+        print(json_file)
+        activity_dict = read_json_file(json_file, choice='activity_dict')
+        smiles_dict = read_json_file(json_file, choice='smiles_dict')
+
+        dbofscaffolds = getMurckoScaffold(smiles_dict)
+        print(len(dbofscaffolds))
+        if len(dbofscaffolds) >= 100:
+            actives = mt100scaffolds(dbofscaffolds, activity_dict, smiles_dict)
+            print(actives)
+        elif len(dbofscaffolds) < 100:
+            actives = lt100scaffolds(dbofscaffolds, activity_dict, smiles_dict)
+            print(actives)
+        write_csv(actives, '{}_subset_{}.csv'.format(json_file_name, len(dbofscaffolds)))
+
+if __name__ == "__main__":
+    main()
