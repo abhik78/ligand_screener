@@ -46,17 +46,21 @@ def getMurckoScaffold(smiles_dict):
     mols_list = [Chem.MolFromSmiles(x) for x in smiles_list]
 
     scaffolds = {}
-    for mol, y in zip(mols_list, chembl_id_list):
+    for mol, chembl_id in zip(mols_list, chembl_id_list):
+
+        try:
+            core = MurckoScaffold.GetScaffoldForMol(mol)
+            scaffold = Chem.MolToSmiles(core)
 
 
-        core = MurckoScaffold.GetScaffoldForMol(mol)
-        scaffold = Chem.MolToSmiles(core)
-
+        except Exception as e:
+            print("rdkit could not read {}".format(chembl_id))
         if scaffold in scaffolds:
-             scaffolds[scaffold].append(y)
+            scaffolds[scaffold].append(chembl_id)
         else:
-             scaffolds[scaffold] = []
-             scaffolds[scaffold].append(y)
+            scaffolds[scaffold] = []
+            scaffolds[scaffold].append(chembl_id)
+
 
     return scaffolds
 
