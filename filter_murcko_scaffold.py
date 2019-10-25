@@ -113,13 +113,20 @@ def lt100scaffolds(scaffolds, activities, smiles):
     return actives
 
 def write_csv(my_dict, filename):
+    '''
+    csv writer used to write two columns .smi file in order to DUD-E to read
+    :param my_dict: dictionary
+    :param filename: .smi filename
+    :return:
+    '''
     with open (filename, 'w', newline='') as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, delimiter = ' ')
         for row in my_dict.items():
             writer.writerow(row)
 
     return filename
 def main():
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--working_dir', '-dir', help='directory where the json files are')
     args = parser.parse_args()
@@ -129,6 +136,7 @@ def main():
     for file in json_files:
         print(file)
         json_file_name = file.split('.')
+
         json_file = os.path.join(args.working_dir, file)
         print(json_file)
         activity_dict = read_json_file(json_file, choice='activity_dict')
@@ -142,7 +150,7 @@ def main():
         elif len(dbofscaffolds) < 100:
             actives = lt100scaffolds(dbofscaffolds, activity_dict, smiles_dict)
             print(actives)
-        write_csv(actives, '{}_subset_{}.csv'.format(json_file_name, len(dbofscaffolds)))
+        write_csv(actives, '{}_subset_{}.smi'.format(json_file_name[0], len(dbofscaffolds)))
 
 if __name__ == "__main__":
     main()
