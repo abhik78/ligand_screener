@@ -25,10 +25,12 @@ def merge_two_dict(d1, d2):
 
 def write_json(json_dir, filename, my_dict):
     '''
+    writes a json file in this format
+    {"CHEMBL379218": ["Cc1n[nH]c2ccc(cc12)c3cncc(OC[C@@H](N)Cc4ccccc4)c3", 46.0]}
 
-    :param json_dir:
-    :param filename:
-    :param my_dict:
+    :param json_dir: output directory
+    :param filename: json filename
+    :param my_dict: dictonary to write
     :return:
     '''
     complete_filepath = os.path.join(json_dir, filename)
@@ -53,7 +55,6 @@ def write_csv(my_dict, filename):
 
 def query_database(sql):
     '''
-
     :param sql: sql query
     :return: rows
     '''
