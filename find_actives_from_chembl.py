@@ -4,6 +4,7 @@ import json
 import csv
 import sys
 from collections import defaultdict
+import argparse
 
 def merge_two_dict(d1, d2):
     '''
@@ -35,7 +36,7 @@ def write_json(filename, my_dict):
 
 def write_csv(my_dict, filename):
     '''
-
+    function not used presently, may be neeeded in future, will kepp it for now
     :param my_dict: dictionary to write
     :param filename:
     :return: csv file
@@ -50,7 +51,7 @@ def write_csv(my_dict, filename):
 def query_database(sql):
     '''
 
-    :param sql:
+    :param sql: sql query
     :return: rows
     '''
     try:
@@ -73,58 +74,62 @@ def query_database(sql):
 
     return rows
 
-with open(sys.argv[1]) as csv_file:
-    reader = csv.DictReader(csv_file)
 
-    for line in reader:
-        unp_id = line['uniprot']
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input_file', '-f', help='single column csv file with uniprot ids, header uniprot_id')
 
-        sql1 = '''select a.canonical_smiles, b.chembl_id, d.standard_value, f.chembl_id as target_chembl_id from compound_structures a 
-                    INNER JOIN molecule_dictionary b 
-                    on a.molregno = b.molregno 
-                    INNER JOIN compound_properties c 
-                    on a.molregno = c.molregno  
-                    INNER JOIN activities d 
-                    on a.molregno = d.molregno  
-                    INNER JOIN assays e
-                    on d.assay_id = e.assay_id
-                    INNER JOIN target_dictionary f
-                    on e.tid = f.tid
-                    INNER JOIN target_components h
-                    on f.tid = h.tid
-                    INNER JOIN component_sequences i
-                    on i.component_id = h.component_id
-                    where c.num_ro5_violations <= 1
-                    and d.standard_type = 'Ki' and d.standard_units = 'nM' and d.standard_value < 1000 and d.standard_relation = '='
-                    and e.assay_type = 'B' and e.confidence_score = 9
-                    and f.target_type = 'SINGLE PROTEIN'
-                    and i.accession = '{}'           
-            '''.format(unp_id)
+    args = parser.parse_args()
 
-        results = query_database(sql1)
+    with open(args.input_file) as csv_file:
+        reader = csv.DictReader(csv_file)
 
-        smiles_full_dict = {}
-        activity_full_dict = {}
-        smiles_inner_dict = {}
-        activity_inner_dict = {}
-        d = {}
-        for row in results:
+        for line in reader:
+            unp_id = line['uniprot_id']
+            print(unp_id)
 
+            sql1 = '''select a.canonical_smiles, b.chembl_id, d.standard_value, f.chembl_id as target_chembl_id from compound_structures a 
+                        INNER JOIN molecule_dictionary b 
+                        on a.molregno = b.molregno 
+                        INNER JOIN compound_properties c 
+                        on a.molregno = c.molregno  
+                        INNER JOIN activities d 
+                        on a.molregno = d.molregno  
+                        INNER JOIN assays e
+                        on d.assay_id = e.assay_id
+                        INNER JOIN target_dictionary f
+                        on e.tid = f.tid
+                        INNER JOIN target_components h
+                        on f.tid = h.tid
+                        INNER JOIN component_sequences i
+                        on i.component_id = h.component_id
+                        where c.num_ro5_violations <= 1
+                        and d.standard_type = 'Ki' and d.standard_units = 'nM' and d.standard_value < 1000 and d.standard_relation = '='
+                        and e.assay_type = 'B' and e.confidence_score = 9
+                        and f.target_type = 'SINGLE PROTEIN'
+                        and i.accession = '{}'           
+                '''.format(unp_id)
 
-            smiles_inner_dict[row[1]] = row[0]
-            set(smiles_inner_dict)
+            results = query_database(sql1)
 
-            activity_inner_dict.setdefault(row[1], []).append(float(row[2]))
-            activity_full_dict.setdefault(unp_id, activity_inner_dict)
-            smiles_full_dict.setdefault(unp_id, smiles_inner_dict)
-
-            # find highest activity
-            for k,v in activity_inner_dict.items():
-                d[k] = max(v)
+            smiles_inner_dict = {}
+            activity_inner_dict = {}
+            highest_activity_dict = {}
+            for row in results:
 
 
+                smiles_inner_dict[row[1]] = row[0]
+                set(smiles_inner_dict)
 
+                activity_inner_dict.setdefault(row[1], []).append(float(row[2]))
 
-        new_dict = merge_two_dict(smiles_inner_dict, d)
-        print(new_dict)
-        write_json('{}.json'.format(unp_id), new_dict)
+                # find highest activity
+                for k,v in activity_inner_dict.items():
+                    highest_activity_dict[k] = max(v)
+
+            new_dict = merge_two_dict(smiles_inner_dict, highest_activity_dict)
+            print(new_dict)
+            write_json('{}.json'.format(unp_id), new_dict)
+
+if __name__ == "__main__":
+    main()
