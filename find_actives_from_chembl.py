@@ -5,6 +5,7 @@ import csv
 import sys
 from collections import defaultdict
 import argparse
+import os
 
 def merge_two_dict(d1, d2):
     '''
@@ -22,14 +23,16 @@ def merge_two_dict(d1, d2):
             dd[key].append(value)
     return dd
 
-def write_json(filename, my_dict):
+def write_json(json_dir, filename, my_dict):
     '''
 
-    :param filename: json filename
-    :param my_dict: dictionary to convert
-    :return: json file
+    :param json_dir:
+    :param filename:
+    :param my_dict:
+    :return:
     '''
-    with open(filename, 'w') as f:
+    complete_filepath = os.path.join(json_dir, filename)
+    with open(complete_filepath, 'w') as f:
         json.dump(my_dict, f)
     return filename
 
@@ -78,6 +81,7 @@ def query_database(sql):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_file', '-f', help='single column csv file with uniprot ids, header uniprot_id')
+    parser.add_argument('--json_dir', '-d', help = 'path of output directory')
 
     args = parser.parse_args()
 
@@ -129,7 +133,7 @@ def main():
 
             new_dict = merge_two_dict(smiles_inner_dict, highest_activity_dict)
             print(new_dict)
-            write_json('{}.json'.format(unp_id), new_dict)
+            write_json(args.json_dir, '{}.json'.format(unp_id), new_dict)
 
 if __name__ == "__main__":
     main()
