@@ -1,11 +1,13 @@
-from rdkit import Chem
-from rdkit.Chem.Scaffolds import MurckoScaffold
 import json
 import os
 import argparse
 import logging
 logging.basicConfig(level=logging.INFO)
 import csv
+from rdkit import Chem
+from rdkit.Chem import Crippen
+from rdkit.Chem import Descriptors
+from rdkit.Chem.Scaffolds import MurckoScaffold
 
 
 def read_json_file(filename, choice):
@@ -29,6 +31,23 @@ def read_json_file(filename, choice):
         return smiles_dict
     elif choice == 'activity_dict':
         return activity_dict
+
+
+def apply_lead_like_filters(smiles_dict):
+    '''Apply lead like filtering, exclude structures
+    AlogP > 4.5
+    mol wt > 450 g/mmol
+
+    :param smiles_dict: {'CHEMBL12345' : 'c1ccccc1OC'}
+    :return: filtered smiles dict
+    '''
+    new_dict = {}
+    for k, v in smiles_dict.items():
+        rdkit_mol = Chem.MolFromSmiles(v)
+        if rdkit_mol:
+            if Crippen.MolLogP(rdkit_mol) < 4.5 or Descriptors.ExactMolWt(rdkit_mol) < 450:
+                new_dict[k] = v
+    return new_dict
 
 
 def getMurckoScaffold(smiles_dict):
@@ -63,6 +82,24 @@ def getMurckoScaffold(smiles_dict):
 
 
     return scaffolds
+
+def get_cluster_ids_for_actives(scaffold_dict):
+
+    '''
+    Cluster the active molecules based on their scaffolds and returns
+    a dictionary of chembl_id and cluster_id in this format
+    {'CHEMBL3589744': 648, 'CHEMBL3589808': 648}
+    :param scaffold_dict: dictionary of scaffolds
+    :return: dictionary of active molecule with cluster ids
+    '''
+
+    cluster_ids = {}
+
+    for rank, (key, values) in enumerate(scaffold_dict.items(), 1):
+        for value in values:
+            cluster_ids[value] = rank
+
+    return cluster_ids
 
 def SelectActives(mols, activities):
     '''
@@ -138,23 +175,29 @@ def main():
     json_files = os.listdir(args.working_dir)
 
     for file in json_files:
-        print(file)
+        #print(file)
         json_file_name = file.split('.')
 
         json_file = os.path.join(args.working_dir, file)
-        print(json_file)
+        #print(json_file)
         activity_dict = read_json_file(json_file, choice='activity_dict')
         smiles_dict = read_json_file(json_file, choice='smiles_dict')
 
-        dbofscaffolds = getMurckoScaffold(smiles_dict)
+        lead_like_filtered_data = apply_lead_like_filters(smiles_dict)
+        #print(lead_like_filtered_data)
+        dbofscaffolds = getMurckoScaffold(lead_like_filtered_data)
+
         print(len(dbofscaffolds))
         if len(dbofscaffolds) >= 100:
-            actives = mt100scaffolds(dbofscaffolds, activity_dict, smiles_dict)
-            print(actives)
+            actives = mt100scaffolds(dbofscaffolds, activity_dict, lead_like_filtered_data)
+            #print(actives)
         elif len(dbofscaffolds) < 100:
-            actives = lt100scaffolds(dbofscaffolds, activity_dict, smiles_dict)
-            print(actives)
+            actives = lt100scaffolds(dbofscaffolds, activity_dict, lead_like_filtered_data)
+            #print(actives)
         write_csv(actives, '{}_subset_{}.smi'.format(json_file_name[0], len(dbofscaffolds)))
+        #write out actives with their cluster ids
+        cluster_id_dict = get_cluster_ids_for_actives(dbofscaffolds)
+        write_csv(cluster_id_dict, '{}_cluster_ids.csv'.format(json_file_name[0]))
 
 if __name__ == "__main__":
     main()
