@@ -6,6 +6,11 @@ import numpy as np
 import sklearn.metrics as metrics
 
 def read_csv(filename):
+    '''
+    ead csv file
+    :param filename:
+    :return:
+    '''
     with open(filename, 'r') as csv_file:
         csv_reader = csv.reader(csv_file)
         for rows in csv_reader:
