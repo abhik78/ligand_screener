@@ -15,7 +15,6 @@ def merge_two_dict(d1, d2):
     :return:
     '''
 
-
     dd = defaultdict(list)
 
     for d in (d1, d2): # you can list as many input dicts as you want here
@@ -41,7 +40,7 @@ def write_json(json_dir, filename, my_dict):
 
 def write_csv(my_dict, filename):
     '''
-    function not used presently, may be neeeded in future, will kepp it for now
+    function not used presently, may be needed in future, will keep it for now
     :param my_dict: dictionary to write
     :param filename:
     :return: csv file
@@ -100,7 +99,7 @@ def main():
                         on a.molregno = c.molregno  
                         INNER JOIN activities d 
                         on a.molregno = d.molregno  
-                        INNER JOIN assays e
+                        INNER JOIN assays e                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
                         on d.assay_id = e.assay_id
                         INNER JOIN target_dictionary f
                         on e.tid = f.tid
