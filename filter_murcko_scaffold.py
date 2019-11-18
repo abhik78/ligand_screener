@@ -194,11 +194,9 @@ def main():
 
 
     for file in json_files:
-        #print(file)
         json_file_name = file.split('.')[0]
 
         json_file = os.path.join(args.working_dir, file)
-        #print(json_file)
         activity_dict = read_json_file(json_file, choice='activity_dict')
         smiles_dict = read_json_file(json_file, choice='smiles_dict')
 
@@ -214,11 +212,6 @@ def main():
 
         #generate murcko scaffold dictionary
         dbofscaffolds = getMurckoScaffold(lead_like_filtered_data)
-
-        #print(len(smiles_filtered_dict.keys()))
-        #print(len(lead_like_filtered_data.keys()))
-        #print(len(dbofscaffolds.keys()))
-        #print(len(activity_filtered_dict.keys()))
 
         #filter based on murcko scaffolds
         if len(dbofscaffolds) >= 100:
