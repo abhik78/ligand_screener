@@ -1,11 +1,12 @@
-import psycopg2
-from psycopg2 import Error
+import MySQLdb
 import json
 import csv
 import sys
 from collections import defaultdict
 import argparse
 import os
+import configparser
+import pymysql
 
 def merge_two_dict(d1, d2):
     '''
@@ -57,18 +58,20 @@ def query_database(sql):
     :param sql: sql query
     :return: rows
     '''
+    config = configparser.ConfigParser()
+    config.read('config.ini')
     try:
-        connection = psycopg2.connect(database="chembl_25"
-                                      , user="postgres",
-                                      password="abhik1234",
-                                      host="127.0.0.1",
-                                      port="5432")
+        connection = pymysql.connect(host = config['mysqlDB']['host'],
+                           user = config['mysqlDB']['user'],
+                           passwd = config['mysqlDB']['pass'],
+                           db = config['mysqlDB']['db'])
+
         cursor = connection.cursor()
         cursor.execute(sql)
         rows = cursor.fetchall()
 
-    except (Exception, psycopg2.Error) as error :
-        print("Error while connecting to PostgreSQL", error)
+    except Exception as error:
+        print("Error while connecting to MySQL", error)
 
     finally:
         if (connection):
