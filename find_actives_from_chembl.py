@@ -83,7 +83,7 @@ def query_database(sql):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_file', '-f', help='single column csv file with uniprot ids, header uniprot_id')
+    parser.add_argument('--input_file', '-f', help='single column csv file with target uniprot ids, header uniprot_id')
     parser.add_argument('--json_dir', '-d', help = 'path of output directory')
 
     args = parser.parse_args()
