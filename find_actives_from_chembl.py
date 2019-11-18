@@ -135,7 +135,6 @@ def main():
                     highest_activity_dict[k] = max(v)
 
             new_dict = merge_two_dict(smiles_inner_dict, highest_activity_dict)
-            print(new_dict)
             write_json(args.json_dir, '{}.json'.format(unp_id), new_dict)
 
 if __name__ == "__main__":
