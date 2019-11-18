@@ -8,6 +8,7 @@ from rdkit import Chem
 from rdkit.Chem import Crippen
 from rdkit.Chem import Descriptors
 from rdkit.Chem.Scaffolds import MurckoScaffold
+import pdb_filter
 
 
 def read_json_file(filename, choice):
@@ -33,7 +34,7 @@ def read_json_file(filename, choice):
         return activity_dict
 
 
-def apply_lead_like_filters(smiles_dict):
+def apply_lead_like_filters(data_dict):
     '''Apply lead like filtering, exclude structures
     AlogP > 4.5
     mol wt > 450 g/mmol
@@ -42,7 +43,7 @@ def apply_lead_like_filters(smiles_dict):
     :return: filtered smiles dict
     '''
     new_dict = {}
-    for k, v in smiles_dict.items():
+    for k, v in data_dict.items():
         rdkit_mol = Chem.MolFromSmiles(v)
         if rdkit_mol:
             if Crippen.MolLogP(rdkit_mol) < 4.5 or Descriptors.ExactMolWt(rdkit_mol) < 450:
@@ -153,51 +154,86 @@ def lt100scaffolds(scaffolds, activities, smiles):
 
     return actives
 
-def write_csv(my_dict, filename):
+def write_csv(my_dict, result_directory, filename):
     '''
     csv writer used to write two columns .smi file in order to DUD-E to read
     :param my_dict: dictionary
     :param filename: .smi filename
     :return:
     '''
-    with open (filename, 'w', newline='') as f:
+    with open (os.path.join(result_directory, filename), 'w', newline='') as f:
         writer = csv.writer(f, delimiter = ' ')
         for row in my_dict.items():
             writer.writerow(row)
 
     return filename
+
+def get_sdf_file(sdf_dir, json_file_name):
+    '''
+    get filename of overlay files from the directory to match with json file of actives
+    :param sdf_dir: directory where all the overlays are
+    :param json_file_name: json file name of the actives
+    :return: sdf overlay file of each active
+    '''
+    sdf_files = os.listdir(sdf_dir)
+    for filename in sdf_files:
+        if filename.endswith('.sdf') and filename.startswith(json_file_name):
+            return (filename)
+
+
 def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--working_dir', '-dir', help='directory where the json files are')
+    parser.add_argument('--result_dir', '-rd', help='directory where result files will be written')
+    parser.add_argument('--overlay_dir', '-od', help='directory where overlay files are')
+
     args = parser.parse_args()
 
     json_files = os.listdir(args.working_dir)
 
+
     for file in json_files:
         #print(file)
-        json_file_name = file.split('.')
+        json_file_name = file.split('.')[0]
 
         json_file = os.path.join(args.working_dir, file)
         #print(json_file)
         activity_dict = read_json_file(json_file, choice='activity_dict')
         smiles_dict = read_json_file(json_file, choice='smiles_dict')
 
-        lead_like_filtered_data = apply_lead_like_filters(smiles_dict)
-        #print(lead_like_filtered_data)
+        # find out pdb het chembl mapping from overlay sdf and remove those chembl ids from our data dict
+        overlay_sdf_file = get_sdf_file(sdf_dir=args.overlay_dir, json_file_name=json_file_name)
+
+        het_chembl_mapping_dict = pdb_filter.create_het_chembl_mapping_dict(filename=(os.path.join(args.overlay_dir, overlay_sdf_file)))
+        smiles_filtered_dict = {i:j for i,j in smiles_dict.items() if i not in het_chembl_mapping_dict}
+        activity_filtered_dict = {i:j for i,j in activity_dict.items() if i not in het_chembl_mapping_dict}
+
+        # apply lead like filter
+        lead_like_filtered_data = apply_lead_like_filters(smiles_filtered_dict)
+
+        #generate murcko scaffold dictionary
         dbofscaffolds = getMurckoScaffold(lead_like_filtered_data)
 
-        print(len(dbofscaffolds))
+        #print(len(smiles_filtered_dict.keys()))
+        #print(len(lead_like_filtered_data.keys()))
+        #print(len(dbofscaffolds.keys()))
+        #print(len(activity_filtered_dict.keys()))
+
+        #filter based on murcko scaffolds
         if len(dbofscaffolds) >= 100:
-            actives = mt100scaffolds(dbofscaffolds, activity_dict, lead_like_filtered_data)
-            #print(actives)
+            actives = mt100scaffolds(dbofscaffolds, activity_filtered_dict, lead_like_filtered_data)
+
         elif len(dbofscaffolds) < 100:
-            actives = lt100scaffolds(dbofscaffolds, activity_dict, lead_like_filtered_data)
-            #print(actives)
-        write_csv(actives, '{}_subset_{}.smi'.format(json_file_name[0], len(dbofscaffolds)))
+            actives = lt100scaffolds(dbofscaffolds, activity_filtered_dict, lead_like_filtered_data)
+
+        write_csv(my_dict=actives, result_directory=args.result_dir,
+                  filename='{}_subset_{}.smi'.format(json_file_name, len(dbofscaffolds)))
+
         #write out actives with their cluster ids
         cluster_id_dict = get_cluster_ids_for_actives(dbofscaffolds)
-        write_csv(cluster_id_dict, '{}_cluster_ids.csv'.format(json_file_name[0]))
+        write_csv(my_dict=cluster_id_dict, result_directory=args.result_dir,
+                  filename='{}_cluster_ids.csv'.format(json_file_name))
 
 if __name__ == "__main__":
     main()
