@@ -2,17 +2,17 @@ import json
 import os
 import argparse
 import logging
-logging.basicConfig(level=logging.INFO)
 import csv
 from rdkit import Chem
 from rdkit.Chem import Crippen
 from rdkit.Chem import Descriptors
 from rdkit.Chem.Scaffolds import MurckoScaffold
 import pdb_filter
+logging.basicConfig(level=logging.INFO)
 
 
 def read_json_file(filename, choice):
-    '''
+    """
     reads a json file name in this format
     {"CHEMBL21": ["Nc1ccc(cc1)S(=O)(=O)N", 628.0]} output smiles and activity dictionary based on choice
     smiles_dict = 'CHEMBL189352': 'COc1ccc2c(cnn2n1)c3ccnc(Nc4ccc(cc4)C#N)n3'
@@ -20,7 +20,7 @@ def read_json_file(filename, choice):
     :param filename: a json file name
     :param choice: either 'smiles_dict' or 'activity_dict'
     :return: smiles or activity dictionary
-    '''
+    """
     smiles_dict = {}
     activity_dict = {}
     with open(filename, 'r') as json_data:
@@ -35,13 +35,12 @@ def read_json_file(filename, choice):
 
 
 def apply_lead_like_filters(data_dict):
-    '''Apply lead like filtering, exclude structures
+    """Apply lead like filtering, exclude structures
     AlogP > 4.5
     mol wt > 450 g/mmol
-
-    :param smiles_dict: {'CHEMBL12345' : 'c1ccccc1OC'}
+    :param data_dict: {'CHEMBL12345' : 'c1ccccc1OC'}
     :return: filtered smiles dict
-    '''
+    """
     new_dict = {}
     for k, v in data_dict.items():
         rdkit_mol = Chem.MolFromSmiles(v)
@@ -51,15 +50,15 @@ def apply_lead_like_filters(data_dict):
     return new_dict
 
 
-def getMurckoScaffold(smiles_dict):
-    '''Reads a smile dictionary in this format
+def get_murcko_scaffold(smiles_dict):
+
+    """Reads a smile dictionary in this format
     'CHEMBL189352': 'COc1ccc2c(cnn2n1)c3ccnc(Nc4ccc(cc4)C#N)n3'
     Returns a dictionary of Murcko scaffolds with the corresponding molecules
     'Cc1n[nH]c2ccc(cc12)c3cncc(OC[C@@H](N)Cc4ccccc4)c3': 'CHEMBL379218'
-    :param smiles_file: smiles dictionary
+    :param smiles_dict: smiles dictionary
     :return: dictionary of scaffolds and chembl_id
-    '''
-    """ """
+    """
     smiles_list = smiles_dict.values()
     chembl_id_list = smiles_dict.keys()
 
@@ -72,7 +71,6 @@ def getMurckoScaffold(smiles_dict):
             core = MurckoScaffold.GetScaffoldForMol(mol)
             scaffold = Chem.MolToSmiles(core)
 
-
         except Exception as e:
             print("rdkit could not read {}".format(chembl_id))
         if scaffold in scaffolds:
@@ -81,19 +79,18 @@ def getMurckoScaffold(smiles_dict):
             scaffolds[scaffold] = []
             scaffolds[scaffold].append(chembl_id)
 
-
     return scaffolds
+
 
 def get_cluster_ids_for_actives(scaffold_dict):
 
-    '''
+    """
     Cluster the active molecules based on their scaffolds and returns
     a dictionary of chembl_id and cluster_id in this format
     {'CHEMBL3589744': 648, 'CHEMBL3589808': 648}
     :param scaffold_dict: dictionary of scaffolds
     :return: dictionary of active molecule with cluster ids
-    '''
-
+    """
     cluster_ids = {}
 
     for rank, (key, values) in enumerate(scaffold_dict.items(), 1):
@@ -102,12 +99,13 @@ def get_cluster_ids_for_actives(scaffold_dict):
 
     return cluster_ids
 
-def SelectActives(mols, activities):
-    '''
+
+def select_actives(mols, activities):
+    """
     :param mols: name of the molecule or ChEMBL id
     :param activities: dictionary of activity
     :return: Returns the list of molecules for each scaffold sorted based on their activities
-    '''
+    """
     scaffold_activities = {}
     for mol in mols:
         scaffold_activities[mol] = activities[mol]
@@ -116,37 +114,38 @@ def SelectActives(mols, activities):
 
 
 def mt100scaffolds(scaffolds, activities, smiles):
-    '''
+    """
     Returns the most active molecule for each scaffold in this format
     'N#Cc1ccc(Nc2nccc(n2)c3cnn4ncccc34)cc1': 'CHEMBL359794'
     :param scaffolds: dictionary of scaffolds
     :param activities: dictionary of activities
     :param smiles: dictionary of smiles
     :return: a dictionary of actives
-    '''
+    """
+
     actives = {}
     for scaffold, mol_names in scaffolds.items():
-        best = SelectActives(mol_names, activities)[0]
+        best = select_actives(mol_names, activities)[0]
         actives[smiles[best]] = best
     return actives
 
 
 def lt100scaffolds(scaffolds, activities, smiles):
-    '''The number of highest affinity ligands taken from each Murcko scaffold are increased
+    """
+    The number of highest affinity ligands taken from each Murcko scaffold are increased
     until we achieve at least 100 ligands or until all ligands are included
     'N#Cc1ccc(Nc2nccc(n2)c3cnn4ncccc34)cc1': 'CHEMBL359794'
     :param scaffolds: dictionary of scaffolds
     :param activities: dictionary of activities
     :param smiles: dictionary of smiles
     :return: dictionary of actives
-    '''
-    """ """
+    """
     actives = {}
     k = 0
     while len(actives) <= 100:
         for scaffold, mol_names in scaffolds.items():
             if len(mol_names) > k:
-                best = SelectActives(mol_names, activities)[k]
+                best = select_actives(mol_names, activities)[k]
                 actives[smiles[best]] = best
         k += 1
         if len(actives) == len(smiles):
@@ -154,13 +153,15 @@ def lt100scaffolds(scaffolds, activities, smiles):
 
     return actives
 
+
 def write_csv(my_dict, result_directory, filename):
-    '''
+    """
     csv writer used to write two columns .smi file in order to DUD-E to read
-    :param my_dict: dictionary
-    :param filename: .smi filename
-    :return:
-    '''
+    :param my_dict: data dictionary
+    :param result_directory: directory name
+    :param filename: filename
+    :return: filename
+    """
     with open (os.path.join(result_directory, filename), 'w', newline='') as f:
         writer = csv.writer(f, delimiter = ' ')
         for row in my_dict.items():
@@ -168,17 +169,18 @@ def write_csv(my_dict, result_directory, filename):
 
     return filename
 
+
 def get_sdf_file(sdf_dir, json_file_name):
-    '''
+    """
     get filename of overlay files from the directory to match with json file of actives
     :param sdf_dir: directory where all the overlays are
     :param json_file_name: json file name of the actives
     :return: sdf overlay file of each active
-    '''
+    """
     sdf_files = os.listdir(sdf_dir)
     for filename in sdf_files:
         if filename.endswith('.sdf') and filename.startswith(json_file_name):
-            return (filename)
+            return filename
 
 
 def main():
@@ -191,7 +193,6 @@ def main():
     args = parser.parse_args()
 
     json_files = os.listdir(args.working_dir)
-
 
     for file in json_files:
         json_file_name = file.split('.')[0]
@@ -211,7 +212,7 @@ def main():
         lead_like_filtered_data = apply_lead_like_filters(smiles_filtered_dict)
 
         #generate murcko scaffold dictionary
-        dbofscaffolds = getMurckoScaffold(lead_like_filtered_data)
+        dbofscaffolds = get_murcko_scaffold(lead_like_filtered_data)
 
         #filter based on murcko scaffolds
         if len(dbofscaffolds) >= 100:
@@ -227,6 +228,7 @@ def main():
         cluster_id_dict = get_cluster_ids_for_actives(dbofscaffolds)
         write_csv(my_dict=cluster_id_dict, result_directory=args.result_dir,
                   filename='{}_cluster_ids.csv'.format(json_file_name))
+
 
 if __name__ == "__main__":
     main()
