@@ -219,15 +219,13 @@ def main():
         if len(dbofscaffolds) >= 100:
             actives = mt100scaffolds(scaffolds=dbofscaffolds, activities=activity_filtered_dict,
                                      smiles=lead_like_filtered_data)
-            write_csv(my_dict=actives, result_directory=args.result_dir,
-                      filename='{}_subset_{}.smi'.format(json_file_name, len(dbofscaffolds)))
 
         elif len(dbofscaffolds) < 100:
             actives = lt100scaffolds(scaffolds=dbofscaffolds, activities=activity_filtered_dict,
                                      smiles=lead_like_filtered_data)
-            write_csv(my_dict=actives, result_directory=args.result_dir,
-                      filename='{}_subset_{}.smi'.format(json_file_name, len(lead_like_filtered_data)))
 
+        write_csv(my_dict=actives, result_directory=args.result_dir,
+                      filename='{}_subset_{}.smi'.format(json_file_name, len(actives)))
         #write out actives with their cluster ids
         cluster_id_dict = get_cluster_ids_for_actives(dbofscaffolds)
         write_csv(my_dict=cluster_id_dict, result_directory=args.result_dir,
