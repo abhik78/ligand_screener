@@ -125,7 +125,7 @@ def mt100scaffolds(scaffolds, activities, smiles):
 
     actives = {}
     for scaffold, mol_names in scaffolds.items():
-        best = select_actives(mol_names, activities)[0]
+        best = select_actives(mols=mol_names, activities=activities)[0]
         actives[smiles[best]] = best
     return actives
 
@@ -145,7 +145,7 @@ def lt100scaffolds(scaffolds, activities, smiles):
     while len(actives) <= 100:
         for scaffold, mol_names in scaffolds.items():
             if len(mol_names) > k:
-                best = select_actives(mol_names, activities)[k]
+                best = select_actives(mols=mol_names, activities=activities)[k]
                 actives[smiles[best]] = best
         k += 1
         if len(actives) == len(smiles):
@@ -198,31 +198,35 @@ def main():
         json_file_name = file.split('.')[0]
 
         json_file = os.path.join(args.working_dir, file)
-        activity_dict = read_json_file(json_file, choice='activity_dict')
-        smiles_dict = read_json_file(json_file, choice='smiles_dict')
+        activity_dict = read_json_file(filename=json_file, choice='activity_dict')
+        smiles_dict = read_json_file(filename=json_file, choice='smiles_dict')
 
         # find out pdb het chembl mapping from overlay sdf and remove those chembl ids from our data dict
         overlay_sdf_file = get_sdf_file(sdf_dir=args.overlay_dir, json_file_name=json_file_name)
 
-        het_chembl_mapping_dict = pdb_filter.create_het_chembl_mapping_dict(filename=(os.path.join(args.overlay_dir, overlay_sdf_file)))
+        het_chembl_mapping_dict = pdb_filter.create_het_chembl_mapping_dict\
+            (filename=(os.path.join(args.overlay_dir, overlay_sdf_file)))
         smiles_filtered_dict = {i:j for i,j in smiles_dict.items() if i not in het_chembl_mapping_dict}
         activity_filtered_dict = {i:j for i,j in activity_dict.items() if i not in het_chembl_mapping_dict}
 
         # apply lead like filter
-        lead_like_filtered_data = apply_lead_like_filters(smiles_filtered_dict)
+        lead_like_filtered_data = apply_lead_like_filters(data_dict=smiles_filtered_dict)
 
         #generate murcko scaffold dictionary
-        dbofscaffolds = get_murcko_scaffold(lead_like_filtered_data)
+        dbofscaffolds = get_murcko_scaffold(smiles_dict=lead_like_filtered_data)
 
         #filter based on murcko scaffolds
         if len(dbofscaffolds) >= 100:
-            actives = mt100scaffolds(dbofscaffolds, activity_filtered_dict, lead_like_filtered_data)
+            actives = mt100scaffolds(scaffolds=dbofscaffolds, activities=activity_filtered_dict,
+                                     smiles=lead_like_filtered_data)
+            write_csv(my_dict=actives, result_directory=args.result_dir,
+                      filename='{}_subset_{}.smi'.format(json_file_name, len(dbofscaffolds)))
 
         elif len(dbofscaffolds) < 100:
-            actives = lt100scaffolds(dbofscaffolds, activity_filtered_dict, lead_like_filtered_data)
-
-        write_csv(my_dict=actives, result_directory=args.result_dir,
-                  filename='{}_subset_{}.smi'.format(json_file_name, len(dbofscaffolds)))
+            actives = lt100scaffolds(scaffolds=dbofscaffolds, activities=activity_filtered_dict,
+                                     smiles=lead_like_filtered_data)
+            write_csv(my_dict=actives, result_directory=args.result_dir,
+                      filename='{}_subset_{}.smi'.format(json_file_name, len(lead_like_filtered_data)))
 
         #write out actives with their cluster ids
         cluster_id_dict = get_cluster_ids_for_actives(dbofscaffolds)
