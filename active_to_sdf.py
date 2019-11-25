@@ -52,7 +52,7 @@ def create_3d_sdf_from_smiles(smiles_chemblid_dict, active_sdf):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--active_dir', '-dir', help='directory where the decoy .picked files are')
+    parser.add_argument('--active_dir', '-dir', help='directory where the decoy .charged files are')
     parser.add_argument('--sdf_file_dir', '-out', help='directory where to write out 3d rdkit sdf files')
     args = parser.parse_args()
 
