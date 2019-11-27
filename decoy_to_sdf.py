@@ -11,10 +11,10 @@ def read_picked_file(directory):
     :param directory: directory where .picked files are
     :return: generator
     '''
-
-    for filename in os.listdir(directory):
-        if filename.endswith('.picked'):
-            yield filename
+    if os.path.exists(directory):
+        for filename in os.listdir(directory):
+            if filename.endswith('.picked'):
+                yield filename
 
 def open_text_file(filename):
     '''
@@ -63,20 +63,20 @@ class Processor:
 
     def process_test_system(self,unp_id):
         decoy_dir = os.path.join(self.args.data_dir, '{}/decoys'.format(unp_id))
+        if os.path.exists(decoy_dir):
+            list_of_decoy_file = [j for j in read_picked_file(decoy_dir)]
 
-        list_of_decoy_file = [j for j in read_picked_file(decoy_dir)]
+            smiles_zincid_dict = {}
 
-        smiles_zincid_dict = {}
+            for filename in list_of_decoy_file:
 
-        for filename in list_of_decoy_file:
+                print(filename)
+                picked_file = os.path.join(decoy_dir, filename)
+                for i in open_text_file(filename=picked_file):
+                    smiles_zincid_dict[i[0]] = i[1]
 
-            print(filename)
-            picked_file = os.path.join(decoy_dir, filename)
-            for i in open_text_file(filename=picked_file):
-                smiles_zincid_dict[i[0]] = i[1]
-
-        decoy_sdf = os.path.join(self.args.sdf_file_dir, "{}_decoy_3d_rdkit.sdf".format(unp_id))
-        create_3d_sdf_from_smiles(smiles_zincid_dict=smiles_zincid_dict, decoy_sdf=decoy_sdf)
+            decoy_sdf = os.path.join(self.args.sdf_file_dir, "{}_decoy_3d_rdkit.sdf".format(unp_id))
+            create_3d_sdf_from_smiles(smiles_zincid_dict=smiles_zincid_dict, decoy_sdf=decoy_sdf)
 
 
 def main():
