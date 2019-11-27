@@ -3,6 +3,7 @@ from rdkit.Chem import AllChem
 import csv
 import os
 import argparse
+import multiprocessing
 
 def read_picked_file(directory):
     '''
@@ -15,15 +16,15 @@ def read_picked_file(directory):
         if filename.endswith('.picked'):
             yield filename
 
-def open_decoy_picked(decoy_filename):
+def open_text_file(filename):
     '''
     read csv file and yiled rows
     :param decoy_filename: read .picked files
     :return: return rows as generator
     '''
-    with open(decoy_filename, 'r') as csv_file:
+    with open(filename, 'r') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter='\t')
-        next(csv_reader)
+        next(csv_reader) #ignore the first line
         for row in csv_reader:
             yield row
 
@@ -48,22 +49,48 @@ def create_3d_sdf_from_smiles(smiles_zincid_dict, decoy_sdf):
         writer.write(molH)
     writer.close()
 
-def main():
+def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--decoys_dir', '-dir', help='directory where the decoy .picked files are')
+    parser.add_argument('--target_ids', '-t', help='target ids as single column csv file')
+    parser.add_argument('--data_dir', '-dir', help='directory where the decoy .picked files are')
     parser.add_argument('--sdf_file_dir', '-out', help='directory where to write out 3d rdkit sdf files')
     args = parser.parse_args()
+    return args
 
-    list_0f_decoy_file = [j for j in read_picked_file(args.decoys_dir)]
+class Processor:
+    def __init__(self,args):
+        self.args = args
 
-    smiles_zincid_dict = {}
-    for file in list_0f_decoy_file:
-        decoy_file = os.path.join(args.decoys_dir, file)
-        for i in open_decoy_picked(decoy_file):
-            smiles_zincid_dict[i[0]] = i[1]
-    #smiles_zincid_dict = {i[0]:i[1] for file in list_0f_decoy_file for i in open_decoy_picked(os.path.join(args.decoys_dir, file))}
-    decoy_sdf = os.path.join(args.sdf_file_dir, "decoy_3d_rdkit.sdf")
-    create_3d_sdf_from_smiles(smiles_zincid_dict=smiles_zincid_dict, decoy_sdf= decoy_sdf)
+    def process_test_system(self,unp_id):
+        decoy_dir = os.path.join(self.args.data_dir, '{}/decoys'.format(unp_id))
+
+        list_of_decoy_file = [j for j in read_picked_file(decoy_dir)]
+
+        smiles_zincid_dict = {}
+
+        for filename in list_of_decoy_file:
+
+            print(filename)
+            picked_file = os.path.join(decoy_dir, filename)
+            for i in open_text_file(filename=picked_file):
+                smiles_zincid_dict[i[0]] = i[1]
+
+        decoy_sdf = os.path.join(self.args.sdf_file_dir, "{}_decoy_3d_rdkit.sdf".format(unp_id))
+        create_3d_sdf_from_smiles(smiles_zincid_dict=smiles_zincid_dict, decoy_sdf=decoy_sdf)
+
+
+def main():
+
+    p = multiprocessing.Pool(8)
+
+    args = parse_arguments()
+    unp_id_list = [row[0] for row in open_text_file(args.target_ids)]
+    print(unp_id_list)
+    proc = Processor(args)
+
+    p.map(proc.process_test_system, unp_id_list)
+
+
 
 if __name__ == "__main__":
     main()
