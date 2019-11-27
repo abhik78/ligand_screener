@@ -49,13 +49,47 @@ def create_3d_sdf_from_smiles(smiles_chemblid_dict, active_sdf):
     writer.close()
 
 
+def parse_arguments():
+    """
 
-def main():
+    :return:
+    """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--active_dir', '-dir', help='directory where the decoy .charged files are')
+    parser.add_argument('--input_file', '-f', help='single column csv file with target uniprot ids, header uniprot_id')
+    parser.add_argument('--dude_decoys_dir', '-dir', help='directory where the .charged files are inside dude-decoys')
     parser.add_argument('--sdf_file_dir', '-out', help='directory where to write out 3d rdkit sdf files')
     args = parser.parse_args()
+    return args
 
+class Processor:
+    def __init__(self,args):
+        self.args = args
+
+    def process_test_system(self,unp_id):
+        decoy_dir = os.path.join(self.args.data_dir, '{}/decoys'.format(unp_id))
+        if os.path.exists(decoy_dir):
+            list_of_decoy_file = [j for j in read_picked_file(decoy_dir)]
+
+            smiles_zincid_dict = {}
+
+            for filename in list_of_decoy_file:
+
+                print(filename)
+                picked_file = os.path.join(decoy_dir, filename)
+                for i in open_text_file(filename=picked_file):
+                    smiles_zincid_dict[i[0]] = i[1]
+
+            decoy_sdf = os.path.join(self.args.sdf_file_dir, "{}_decoy_3d_rdkit.sdf".format(unp_id))
+            create_3d_sdf_from_smiles(smiles_zincid_dict=smiles_zincid_dict, decoy_sdf=decoy_sdf)
+
+
+#multiprocessing class, modify accordingly
+
+def main():
+
+    args = parse_arguments()
+    list_of_targets= [id for id in open_file(args.input_file)]
+    #needs to add steps to browse decoys directory and find the files
     list_of_charged_file = [j for j in read_charged_file(args.active_dir)]
     smiles_chemblid_dict = {}
     for file in list_of_charged_file:
