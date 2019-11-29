@@ -43,7 +43,7 @@ def create_3d_sdf_from_smiles(smiles_zincid_dict, decoy_sdf):
         mol = Chem.MolFromSmiles(k)
         molH = Chem.AddHs(mol)
 
-        AllChem.EmbedMolecule(molH)
+        AllChem.EmbedMolecule(molH, useRandomCoords=True)
         AllChem.UFFOptimizeMolecule(molH)
         molH.SetProp("_Name", "ZIN"+v)
         writer.write(molH)
@@ -63,6 +63,7 @@ class Processor:
 
     def process_test_system(self,unp_id):
         decoy_dir = os.path.join(self.args.data_dir, '{}/decoys'.format(unp_id))
+        print(unp_id)
         if os.path.exists(decoy_dir):
             list_of_decoy_file = [j for j in read_picked_file(decoy_dir)]
 
