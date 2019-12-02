@@ -49,7 +49,7 @@ def create_3d_sdf_from_smiles(smiles_zincid_dict, decoy_sdf):
             molH.SetProp("_Name", "ZIN"+v)
             writer.write(molH)
         except:
-            print(("no conformer for Zin" + {}).format(v))
+            print(("no conformer for Zin" + "{}").format(v))
     writer.close()
 
 def parse_arguments():
