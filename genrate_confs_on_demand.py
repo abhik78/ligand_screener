@@ -63,10 +63,6 @@ class Conformer_generator:
             for c in conformers:
                 mol_writer.write(c.molecule)
 
-def work(args, mol):
-    proc = Conformer_generator(args)
-    proc.generate_conformer(mol)
-
 def main():
     args = parse_arguments()
     sdf_dir = os.path.join(args.sdf_dir)
