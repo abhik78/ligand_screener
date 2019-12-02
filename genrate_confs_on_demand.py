@@ -1,9 +1,10 @@
 import os
 import argparse
+from ttictoc import TicToc
+
 from ccdc.io import MoleculeReader, MoleculeWriter
 from ccdc.conformer import ConformerGenerator, ConformerSettings
 import multiprocessing
-from ttictoc import TicToc
 
 def read_sdf_file(directory):
     '''
@@ -67,6 +68,7 @@ class Conformer_generator:
 
 def main():
     args = parse_arguments()
+    p = multiprocessing.Pool(8)
     sdf_dir = os.path.join(args.sdf_dir)
     list_of_sdf_files = [filename for filename in read_sdf_file(sdf_dir)]
     list_of_molecules = []
@@ -82,9 +84,11 @@ def main():
         for m in MoleculeReader(os.path.join(sdf_dir, file)):
             list_of_molecules.append(m)
 
+
         for mol in list_of_molecules:
             print(mol.identifier)
             proc.generate_conformer(full_directory_path, mol)
+
     t.toc()
     print(t.elapsed)
 
