@@ -40,13 +40,16 @@ def create_3d_sdf_from_smiles(smiles_zincid_dict, decoy_sdf):
 
     for k, v in smiles_zincid_dict.items():
         #print(v)
-        mol = Chem.MolFromSmiles(k)
-        molH = Chem.AddHs(mol)
+        try:
+            mol = Chem.MolFromSmiles(k)
+            molH = Chem.AddHs(mol)
 
-        AllChem.EmbedMolecule(molH, useRandomCoords=True)
-        AllChem.UFFOptimizeMolecule(molH)
-        molH.SetProp("_Name", "ZIN"+v)
-        writer.write(molH)
+            AllChem.EmbedMolecule(molH, useRandomCoords=True)
+            AllChem.UFFOptimizeMolecule(molH)
+            molH.SetProp("_Name", "ZIN"+v)
+            writer.write(molH)
+        except:
+            print(("no conformer for Zin" + {}).format(v))
     writer.close()
 
 def parse_arguments():
