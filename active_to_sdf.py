@@ -39,13 +39,17 @@ def create_3d_sdf_from_smiles(smiles_chemblid_dict, active_sdf):
     writer = Chem.SDWriter(active_sdf)
 
     for k, v in smiles_chemblid_dict.items():
-        mol = Chem.MolFromSmiles(k)
-        molH = Chem.AddHs(mol)
 
-        AllChem.EmbedMolecule(molH)
-        AllChem.UFFOptimizeMolecule(molH)
-        molH.SetProp("_Name", v)
-        writer.write(molH)
+        try:
+            mol = Chem.MolFromSmiles(k)
+            molH = Chem.AddHs(mol)
+
+            AllChem.EmbedMolecule(molH)
+            AllChem.UFFOptimizeMolecule(molH)
+            molH.SetProp("_Name", v)
+            writer.write(molH)
+        except:
+            print(("no conformers for molcule" + {}).format(v))
     writer.close()
 
 
@@ -67,6 +71,7 @@ class Processor:
 
     def process_test_system(self,unp_id):
         decoy_dir = os.path.join(self.args.data_dir, '{}'.format(unp_id))
+        print(unp_id)
         if os.path.exists(decoy_dir):
             list_of_decoy_file = [j for j in read_charged_file(decoy_dir)]
 
