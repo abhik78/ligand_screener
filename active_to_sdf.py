@@ -28,7 +28,7 @@ def open_file(filename):
         for row in csv_reader:
             yield row
 
-def create_3d_sdf_from_smiles(smiles_chemblid_dict, active_sdf):
+def create_3d_sdf_from_smiles(smiles_chemblid_dict, active_sdf_file):
 
     '''
     create 3D sdf files using rdkit
@@ -36,7 +36,7 @@ def create_3d_sdf_from_smiles(smiles_chemblid_dict, active_sdf):
     :param decoy_sdf: 3d sdf
     :return: combined sdf file
     '''
-    writer = Chem.SDWriter(active_sdf)
+    writer = Chem.SDWriter(active_sdf_file)
 
     for k, v in smiles_chemblid_dict.items():
 
@@ -49,7 +49,7 @@ def create_3d_sdf_from_smiles(smiles_chemblid_dict, active_sdf):
             molH.SetProp("_Name", v)
             writer.write(molH)
         except:
-            print(("no conformers for molcule" + {}).format(v))
+            print("{}".format(v))
     writer.close()
 
 
@@ -82,8 +82,8 @@ class Processor:
                 picked_file = os.path.join(decoy_dir, filename)
                 for i in open_file(filename=picked_file):
                     smiles_chemblid_dict[i[0]] = i[1]
-            active_sdf = os.path.join(self.args.sdf_file_dir, "{}_active_3d_rdkit.sdf".format(unp_id))
-            create_3d_sdf_from_smiles(smiles_chemblid_dict=smiles_chemblid_dict, active_sdf=active_sdf)
+            active_sdf_file = os.path.join(self.args.sdf_file_dir, "{}_active_3d_rdkit.sdf".format(unp_id))
+            create_3d_sdf_from_smiles(smiles_chemblid_dict=smiles_chemblid_dict, active_sdf_file=active_sdf_file)
 
 
 def main():
