@@ -54,22 +54,24 @@ class Conformer_generator:
     def __init__(self, args):
         self.args = args
 
-    def generate_conformer(self, directory, mol):
+    def generate_conformer(self, mol):
 
-        conformers = generate_confs(mol, int(self.args.number_of_conformers), 8)
+        conformers = generate_confs(mol, int(self.args.number_of_conformers), 1)
 
-        full_file_path = os.path.join(directory, '%s_conformers.mol2' % mol.identifier)
-        with MoleculeWriter(full_file_path) as mol_writer:
+        #full_file_path = os.path.join(directory, '%s_conformers.mol2' % mol.identifier)
+        with MoleculeWriter('%s_conformers.mol2' % mol.identifier) as mol_writer:
             for c in conformers:
                 mol_writer.write(c.molecule)
 
-
+def work(args, mol):
+    proc = Conformer_generator(args)
+    proc.generate_conformer(mol)
 
 def main():
     args = parse_arguments()
     sdf_dir = os.path.join(args.sdf_dir)
     list_of_sdf_files = [filename for filename in read_sdf_file(sdf_dir)]
-    list_of_molecules = []
+
     proc = Conformer_generator(args)
     t = TicToc()
     t.tic()
@@ -78,15 +80,15 @@ def main():
         sdf_file_name = file.split('_')[0]
         full_directory_path = os.path.join(args.conformers_file_dir, '{}'.format(sdf_file_name))
         os.makedirs(full_directory_path)
-
+        os.chdir(full_directory_path)
+        list_of_molecules = []
         for m in MoleculeReader(os.path.join(sdf_dir, file)):
             list_of_molecules.append(m)
 
-
+        print(type(list_of_molecules))
         for mol in list_of_molecules:
             print(mol.identifier)
-            proc.generate_conformer(full_directory_path, mol)
-
+            proc.generate_conformer(mol)
     t.toc()
     print(t.elapsed)
 
