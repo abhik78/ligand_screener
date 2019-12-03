@@ -2,11 +2,9 @@ from rdkit import Chem
 from rdkit.ML.Scoring import Scoring
 import csv
 import matplotlib.pyplot as plt
-import numpy as np
 import sklearn.metrics as metrics
 from ccdc.descriptors import StatisticalDescriptors
 import operator
-import collections
 def read_csv(filename):
     '''
     ead csv file
