@@ -71,7 +71,6 @@ class Processor:
 
     def process_test_system(self,unp_id):
         decoy_dir = os.path.join(self.args.data_dir, '{}'.format(unp_id))
-        print(unp_id)
         if os.path.exists(decoy_dir):
             list_of_decoy_file = [j for j in read_charged_file(decoy_dir)]
 
@@ -81,7 +80,9 @@ class Processor:
 
                 picked_file = os.path.join(decoy_dir, filename)
                 for i in open_file(filename=picked_file):
-                    smiles_chemblid_dict[i[0]] = i[1]
+                    molecule_name = i[1] + '_' + i[2]
+                    print(molecule_name)
+                    smiles_chemblid_dict[i[0]] = molecule_name
             active_sdf_file = os.path.join(self.args.sdf_file_dir, "{}_active_3d_rdkit.sdf".format(unp_id))
             create_3d_sdf_from_smiles(smiles_chemblid_dict=smiles_chemblid_dict, active_sdf_file=active_sdf_file)
 
