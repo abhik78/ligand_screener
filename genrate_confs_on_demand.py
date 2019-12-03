@@ -4,7 +4,7 @@ from ttictoc import TicToc
 
 from ccdc.io import MoleculeReader, MoleculeWriter
 from ccdc.conformer import ConformerGenerator, ConformerSettings
-
+from multiprocessing.pool import ThreadPool as Pool
 def read_sdf_file(directory):
     '''
     read .picked file and create genrator
@@ -64,6 +64,7 @@ class Conformer_generator:
                 mol_writer.write(c.molecule)
 
 def main():
+    p = Pool(8)
     args = parse_arguments()
     sdf_dir = os.path.join(args.sdf_dir)
     list_of_sdf_files = [filename for filename in read_sdf_file(sdf_dir)]
@@ -82,9 +83,10 @@ def main():
             list_of_molecules.append(m)
 
         print(type(list_of_molecules))
-        for mol in list_of_molecules:
-            print(mol.identifier)
-            proc.generate_conformer(mol)
+        #for mol in list_of_molecules:
+        #    print(mol.identifier)
+        #   proc.generate_conformer(mol)
+        p.map(proc.generate_conformer, list_of_molecules)
     t.toc()
     print(t.elapsed)
 
