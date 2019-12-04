@@ -68,25 +68,28 @@ def main():
     args = parse_arguments()
     sdf_dir = os.path.join(args.sdf_dir)
     list_of_sdf_files = [filename for filename in read_sdf_file(sdf_dir)]
-
+    print(list_of_sdf_files)
     proc = Conformer_generator(args)
     t = TicToc()
     t.tic()
 
     for file in list_of_sdf_files:
         sdf_file_name = file.split('_')[0]
+        print(sdf_file_name)
         full_directory_path = os.path.join(args.conformers_file_dir, '{}'.format(sdf_file_name))
         os.makedirs(full_directory_path)
         os.chdir(full_directory_path)
-        list_of_molecules = []
-        for m in MoleculeReader(os.path.join(sdf_dir, file)):
-            list_of_molecules.append(m)
+        try:
+            molecule_object_from_sdf_file = MoleculeReader(os.path.join(sdf_dir, file))
+            list_of_molecules = [m for m in molecule_object_from_sdf_file]
 
-        print(type(list_of_molecules))
-        #for mol in list_of_molecules:
-        #    print(mol.identifier)
-        #   proc.generate_conformer(mol)
-        p.map(proc.generate_conformer, list_of_molecules)
+            # for mol in list_of_molecules:
+            #    print(mol.identifier)
+            #   proc.generate_conformer(mol)
+            p.map(proc.generate_conformer, list_of_molecules)
+        except:
+            print("can not read sdf file {}".format(file))
+
     t.toc()
     print(t.elapsed)
 
