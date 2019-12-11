@@ -5,6 +5,7 @@ from ttictoc import TicToc
 from ccdc.io import MoleculeReader, MoleculeWriter
 from ccdc.conformer import ConformerGenerator, ConformerSettings
 from multiprocessing.pool import ThreadPool as Pool
+
 def read_sdf_file(directory):
     '''
     read .picked file and create genrator
@@ -42,13 +43,7 @@ def generate_confs(mol, nconformers, nthreads):
     confs = gen.generate(standardised_mol)
 
     return confs
-def parse_arguments():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--sdf_dir', '-dir', help='sdf file to generate conformers')
-    parser.add_argument('--conformers_file_dir', '-out', help='directory where to write out conformmers')
-    parser.add_argument('--number_of_conformers', '-n', help='number of conformers to generate')
-    args = parser.parse_args()
-    return args
+
 
 class Conformer_generator:
     def __init__(self, args):
@@ -62,6 +57,14 @@ class Conformer_generator:
         with MoleculeWriter('%s_conformers.mol2' % mol.identifier) as mol_writer:
             for c in conformers:
                 mol_writer.write(c.molecule)
+
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--sdf_dir', '-dir', help='sdf file to generate conformers')
+    parser.add_argument('--conformers_file_dir', '-out', help='directory where to write out conformmers')
+    parser.add_argument('--number_of_conformers', '-n', help='number of conformers to generate')
+    args = parser.parse_args()
+    return args
 
 def main():
     p = Pool(8)
@@ -83,9 +86,6 @@ def main():
             molecule_object_from_sdf_file = MoleculeReader(os.path.join(sdf_dir, file))
             list_of_molecules = [m for m in molecule_object_from_sdf_file]
 
-            # for mol in list_of_molecules:
-            #    print(mol.identifier)
-            #   proc.generate_conformer(mol)
             p.map(proc.generate_conformer, list_of_molecules)
         except:
             print("can not read sdf file {}".format(file))
