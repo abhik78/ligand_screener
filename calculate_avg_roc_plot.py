@@ -88,17 +88,17 @@ def main():
             mean_tpr[-1] = 1.0
 
             if (category) == 'easy':
-                plot_curve(fpr=fpr, tpr=tpr, color='blue')
+                plot_curve(fpr=mean_fpr, tpr=mean_tpr, color='blue')
 
 
             elif (category) == 'moderate':
-                plot_curve(fpr=fpr, tpr=tpr, color='orange')
+                plot_curve(fpr=mean_fpr, tpr=mean_tpr, color='orange')
 
             elif (category) == 'hard':
-                plot_curve(fpr=fpr, tpr=tpr, color='green')
+                plot_curve(fpr=mean_fpr, tpr=mean_tpr, color='green')
 
             elif (category) == 'unfeasible':
-                plot_curve(fpr=fpr, tpr=tpr, color='magenta')
+                plot_curve(fpr=mean_fpr, tpr=mean_tpr, color='magenta')
         else:
             print("no info for target {}".format(unp_id))
 
